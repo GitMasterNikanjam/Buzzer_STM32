@@ -1,2 +1,3 @@
 Drivers/
-examples/SimpleTest_STM32F103C8T6/MDK-ARM/SimpleTest_STM32F103C8T6
+examples/
+.vscode/

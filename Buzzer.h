@@ -3,8 +3,8 @@
 // ##############################################################################################
 // Define the target MCU family here
 
-#define STM32F1
-// #define STM32F4
+// #define STM32F1
+#define STM32F4
 // #define STM32H7
 
 // ##############################################################################################
@@ -24,6 +24,8 @@
 /**
  @class BuzzerAlarm
  @brief Buzzer class for manage alaram sounds.
+ @note - Maximum output speed GPIO config is LOW.
+ @note - GPIO mode is output push-pull.
 */
 class Buzzer
 {
@@ -31,23 +33,53 @@ class Buzzer
 
     /**
      @brief Default constructor.
+     @param activeMode: This is the GPIO output value when the LED state is on. Default is active high.
+     @note - The init() method is needed after this to apply the settings on the hardware.
+     @note - Maximum output speed GPIO config is LOW.
+     @note - GPIO mode is output push-pull.
     */
     Buzzer(GPIO_TypeDef* gpioPort, uint16_t gpioPin, uint8_t activeMode = 1);
 
     /**
-     @brief Initial object. start digital GPIO ouput mode. Check parameters.
-     @return true if successed.
+     @brief Apply the settings to the hardware. Start the Buzzer action.
+     @return true if successful.
     */
-    bool begin(void);
+    bool init(void);
+
+    /**
+     * @brief Clean setting on hardware. Stop  Buzzer action. 
+     */
+    void clean(void);
+
+    /**
+     * @brief Trig the Buzzer.
+     * @param period: is the period time for toggle Buzzer.
+     * @param number: is the number of toggling.
+     * @param blockingMode: is the trig mode for blocking mode enable/disable. Default value is true that means triggering is in blocking mode.
+     * @note - Total time duration for toggle operation is: (period * number)
+     */
+    void trig(uint16_t period, uint8_t number, bool blockingMode = true);
+
+    /**
+     * @brief Return triggering status in non blocking mode.
+     * @return - true if triggering proccess is not finished.
+     * @return - false if triggering proccess is finished.
+     *  */ 
+    bool isTriggering(void) {return _trigFlag;};
+
+    /**
+     * @brief Update triggering status in non blocking mode.
+     */
+    void trigUpdate(void);
 
     // ------------------------------------------------------------------
     // Special sounds for buzzer:
 
     /// @brief Alarm for finished initial and configurations something.
-    void soundInit(void);
+    void soundInit(bool blockingMode = true);
 
     /// @brief Alarm for stop something action for operations. 
-    void soundStop(void);
+    void soundStop(bool blockingMode = true);
     
     /// @brief Alarm type_1 for warning happening.
     void soundWarning_1(void);
@@ -67,6 +99,9 @@ class Buzzer
     /// @brief turn off sound.
     void off(void);
 
+    /// @brief Toggle the LED.
+    void toggle(void);
+
   private:
 
     /**
@@ -75,18 +110,39 @@ class Buzzer
      */
     struct ParametersStructure
     {
+        /// @brief GPIO port for buzzer pin.
         GPIO_TypeDef* GPIO_PORT;
 
+        /**
+         * @brief GPIO pin number for buzzer. 
+         * @note It shoude be GPIO_PIN_0, GPIO_PIN_1, ...
+         *  */
         uint16_t GPIO_PIN;
 
+        /// @brief Active mode of buzzer control. 0: Active low, 1: Active high.
         uint8_t ACTIVE_MODE;
     }parameters;
+
+    /// @brief The time update for buzzer triggering in non blocking mode.
+    uint32_t _T;
 
     /// @brief GPIO_PinState value for LED turn on state.
     GPIO_PinState _on;
 
     /// @brief GPIO_PinState value for LED turn off state.
     GPIO_PinState _off;
+
+    /// @brief Counter for trig buzzer in non blocking mode.
+    uint8_t _trigCounter;
+
+    /// @brief The flag for trig buzzer state in non blocking mode.
+    bool _trigFlag;
+
+    /// @brief The period of time for one trig buzzer in non blocking mode.
+    uint16_t _trigPeriod;
+
+    /// @brief The number of trig buzzer in non blocking mode.
+    uint8_t _trigNumber;
 
 };
 

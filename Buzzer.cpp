@@ -25,21 +25,76 @@ Buzzer::Buzzer(GPIO_TypeDef* gpioPort, uint16_t gpioPin, uint8_t activeMode)
     }
 }
 
-bool Buzzer::begin(void)
+bool Buzzer::init(void)
 {
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
+  #ifdef GPIOA
+  if(parameters.GPIO_PORT == GPIOA)
+  {
+      __HAL_RCC_GPIOA_CLK_ENABLE();
+  }
+  #endif
+  #ifdef GPIOB
+  else if (parameters.GPIO_PORT == GPIOB)
+  {
+      __HAL_RCC_GPIOB_CLK_ENABLE();
+  }
+  #endif
+  #ifdef GPIOC
+  else if (parameters.GPIO_PORT == GPIOC)
+  {
+      __HAL_RCC_GPIOC_CLK_ENABLE();
+  }
+  #endif
+  #ifdef GPIOD
+  else if (parameters.GPIO_PORT == GPIOD)
+  {
+      __HAL_RCC_GPIOD_CLK_ENABLE();
+  }
+  #endif
+  #ifdef GPIOE
+  else if (parameters.GPIO_PORT == GPIOE)
+  {
+      __HAL_RCC_GPIOE_CLK_ENABLE();
+  }
+  #endif
+  #ifdef GPIOF
+  else if (parameters.GPIO_PORT == GPIOF)
+  {
+      __HAL_RCC_GPIOF_CLK_ENABLE();
+  }
+  #endif
+  #ifdef GPIOG
+  else if (parameters.GPIO_PORT == GPIOG)
+  {
+      __HAL_RCC_GPIOG_CLK_ENABLE();
+  }
+  #endif
+  #ifdef GPIOH
+  else if (parameters.GPIO_PORT == GPIOH)
+  {
+      __HAL_RCC_GPIOH_CLK_ENABLE();
+  }
+  #endif
+  #ifdef GPIOI
+  else if (parameters.GPIO_PORT == GPIOI)
+  {
+      __HAL_RCC_GPIOI_CLK_ENABLE();
+  }
+  #endif
 
-    /*Configure GPIO pin */
-    GPIO_InitStruct.Pin = parameters.GPIO_PIN;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(parameters.GPIO_PORT, &GPIO_InitStruct);
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    /*Configure GPIO pin Output Level */
-    off();
+  /*Configure GPIO pin */
+  GPIO_InitStruct.Pin = parameters.GPIO_PIN;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(parameters.GPIO_PORT, &GPIO_InitStruct);
 
-    return true;
+  /*Configure GPIO pin Output Level */
+  off();
+
+  return true;
 }
 
 void Buzzer::on(void)
@@ -52,23 +107,33 @@ void Buzzer::off(void)
   HAL_GPIO_WritePin(parameters.GPIO_PORT, parameters.GPIO_PIN, _off);
 }
 
-void Buzzer::soundInit(void)
+void Buzzer::toggle(void)
 {
-  on();
-  HAL_Delay(1000);
-  off();
-  HAL_Delay(100);
+    HAL_GPIO_TogglePin(parameters.GPIO_PORT, parameters.GPIO_PIN);
 }
 
-void Buzzer::soundStop(void)
+void Buzzer::clean(void)
 {
-  for(uint8_t i=1;i<=2;i++)
-  {
-  on();
-  HAL_Delay(100);
-  off();
-  HAL_Delay(100);
-  }
+    off();
+
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    
+    /*Configure GPIO pin */
+    GPIO_InitStruct.Pin = parameters.GPIO_PIN;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    HAL_GPIO_Init(parameters.GPIO_PORT, &GPIO_InitStruct);
+}
+
+void Buzzer::soundInit(bool blockingMode)
+{
+  trig(2000, 1, blockingMode);
+}
+
+void Buzzer::soundStop(bool blockingMode)
+{
+  trig(200, 2, blockingMode);
 }
 
 void Buzzer::soundWarning_1(void)
@@ -104,4 +169,59 @@ void Buzzer::soundWarning_3(void)
     off();
     HAL_Delay(25);  
   }
+}
+
+void Buzzer::trig(uint16_t period, uint8_t number, bool blockingMode)
+{
+    if( (period == 0) || (number == 0) )
+    {
+        _T = 0;
+        _trigFlag = false;
+        off();
+    }
+
+    if(blockingMode == true)
+    {
+        for(int i=1; i<=number; i++)
+        {
+            on();
+            HAL_Delay(period/2);
+            off();
+            HAL_Delay(period/2);
+        }
+    }
+    else
+    {
+        _trigNumber = number;
+        _trigPeriod = period;
+        _T = HAL_GetTick();
+        _trigCounter = 0;
+        _trigFlag = true;
+        on();
+    }
+}
+
+void Buzzer::trigUpdate(void)
+{
+    uint32_t time = HAL_GetTick();
+
+    if( (_trigFlag == false) || (time <= _T) )
+    {
+        return;
+    }
+
+    uint32_t hp = _trigPeriod/2;
+    
+    if( (time - _T) >= hp)
+    {
+        ++_trigCounter;
+        if(_trigCounter >= (2* _trigNumber) )
+        {
+            _trigFlag = false;
+            off();
+            return;
+        }
+        toggle();
+        _T = time;   
+    }
 }
