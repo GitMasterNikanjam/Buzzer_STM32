@@ -1,3 +1,14 @@
 Drivers/
 examples/
 .vscode/
+mcu_select.h
+*.o
+*.crf
+*.d
+*.axf
+*.htm
+*.hex
+*.lnp
+*.map
+*.sct
+*.dep
