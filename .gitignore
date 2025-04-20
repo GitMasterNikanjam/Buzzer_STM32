@@ -1,5 +1,4 @@
 Drivers/
-examples/
 .vscode/
 mcu_select.h
 *.o
